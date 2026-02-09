@@ -1,0 +1,29 @@
+
+@import 'tailwindcss';
+/* @plugin "tailwindcss-animate"; */
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+@import '@skeletonlabs/skeleton'; 
+@import '@skeletonlabs/skeleton-svelte'; 
+@import '@skeletonlabs/skeleton/themes/modern';
+
+@custom-variant dark (&:is(.dark *)); 
+
+[data-theme='modern'] body {
+	--body-background-color-dark: #111827;
+	color: light-dark(#333b3c, #efefec);
+  	background-color: light-dark(white, #223a2c);
+	
+	--color-primary-500: 255 190 11;
+    
+    /* Secondary - Blue-pu Anda */
+    --color-secondary-500: 90 24 154;
+
+    /* Success - Hijau pilihan Anda (contoh: Emerald) */
+    --color-success-500: 16 185 129;
+
+    /* Opsional: Warna teks di atas warna tersebut (On-Token) */
+    --on-primary: 0 0 0;       /* Hitam di atas Mango */
+    --on-secondary: 255 255 255; /* Putih di atas Blue-pu */
+    --on-success: 255 255 255;   /* Putih di atas Hijau */
+}
