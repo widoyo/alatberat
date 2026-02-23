@@ -9,14 +9,16 @@ import { verify } from '@node-rs/argon2';
 
 export const actions: Actions = {
 	login: async (event) => {
+		console.log('login Action');
 		const formData = await event.request.formData();
 		const username = formData.get('username');
 		const password = formData.get('password');
+		console.log('username:', username);
+		console.log('password:', password);
 		
 		if (typeof username !== 'string' || typeof password !== 'string') {
 			return fail(400, { message: 'Incorrect username or password' });
 		}
-		
 		const next = formData.get('next')?.toString() || '/';
 		const results = await db.select().from(users).where(eq(users.username, username));
 

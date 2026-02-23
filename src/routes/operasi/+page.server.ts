@@ -2,18 +2,18 @@ import { aset } from "$lib/server/db/schema";
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { fail } from '@sveltejs/kit';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, isNull } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ params }) => {
 
-    const alatberats = await db
+    const penggunaan = await db
         .query
-        .aset
+        .penggunaanAset
         .findMany({
-            where: (aset, { eq }) => eq(aset.kategoriAset, 'alat berat'),
+            where: (penggunaanAset, { isNull }) => isNull(penggunaanAset.tanggalSelesai),
         });
 	return {
-		alatberats: alatberats
+		penggunaan: penggunaan
 	};
 };
 

@@ -1,0 +1,22 @@
+{
+  "name": "SI Mantab BBWS S8",
+  "short_name": "SI Mantab",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffbe0b",
+  "icons": [
+    {
+    "src": "excavator.svg",
+    "sizes": "any",
+    "type": "image/svg+xml",
+    "purpose": "any"
+    },
+    {
+    "src": "excavator.svg",
+    "sizes": "any",
+    "type": "image/svg+xml",
+    "purpose": "maskable"
+    }
+  ]
+}

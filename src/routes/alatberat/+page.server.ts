@@ -18,3 +18,25 @@ export const load: PageServerLoad = async () => {
             error: "Gagal memuat data" }; 
         } 
     };
+
+export const actions = {
+    add: async ({ request }) => {
+        const data = await request.formData();
+        const nama = data.get('nama');
+
+        if (!nama || nama.length < 3) {
+            return fail(400, { 
+                error: true, 
+                message: 'Nama operator terlalu pendek',
+                values: { nama } // Kirim balik agar input tidak hilang
+            });
+        }
+
+        try {
+            // Logika simpan ke Drizzle...
+            return { success: true, message: 'Operator berhasil ditambah' };
+        } catch (e) {
+            return fail(500, { error: true, message: 'Gagal menyimpan ke database' });
+        }
+    }
+};

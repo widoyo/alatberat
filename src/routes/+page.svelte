@@ -1,81 +1,76 @@
 <script lang="ts">
   // This is the main page of the application
-  import Card from '$lib/components/Card.svelte';
-    let { data, form } = $props();
+  import Card from "$lib/components/Card.svelte";
+  import * as Table from "$lib/components/ui/table";
+  import { slide } from 'svelte/transition';
+
+  let { data, form } = $props();
+
+  let expandedId = $state<number | null>(null);
+  function toggle(id: number) {
+    expandedId = expandedId === id ? null : id;
+  }
 </script>
 
 <h1>Home</h1>
 <div class="flex flex-col md:flex-row gap-4 mb-24">
-    <div class="flex-1">
-        <h2 class="text-xl font-semibold mb-5">Alat Berat Beroperasi</h2>
-        <p class="text-sm mb-2">Alat berat yang sedang aktif digunakan</p>
-        <div class="table-container mt-2 rounded-2xl">
-        <table class="table border  rounded-2xl border-gray-500 w-full mt-2">
-            <thead>
-                <tr>
-                    <th>Nama Aset</th>
-                    <th>Lokasi</th>
-                    <th>Sejak</th>
-                </tr>
-            </thead>
-            <tbody class="[&>tr]:hover:preset-tonal-primary">
-                {#each data.alatBeratOnDuty as aktif (aktif.id)}
-                    <tr>
-                        <td><a href="/alatberat/{aktif.nup}">{aktif.nup} {aktif.deskripsi}</a></td>
-                        <td>{aktif.lokasi}</td>
-                        <td>{new Date(aktif.penggunaan[aktif.penggunaan.length - 1].tanggalMulai).toLocaleString()}</td>
-                    </tr>
-                {:else}
-                    <tr>
-                        <td colspan="3" class="text-center italic opacity-50 py-10">
-                            Belum ada data alat berat.
-                        </td>
-                    </tr>
-                {/each}
-            </tbody>
-        </table>
-        </div>
+  <div class="flex-1">
+    <div class="rounded-md border border-black overflow-hidden">
+      <Table.Root>
+        <Table.Header>
+          <Table.Row>
+            <Table.Head>NUP</Table.Head>
+            <Table.Head>Nama</Table.Head>
+            <Table.Head>Lokasi</Table.Head>
+            <Table.Head>Info Terakhir</Table.Head>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+        {#each data.semuaAlatberat as ab (ab.id)}
+            <Table.Row>
+                <Table.Cell>
+                    <a href="/alatberat/{ab.nup}">{ab.nup}</a>
+                </Table.Cell>
+                <Table.Cell 
+                onclick={() => toggle(ab.id)} 
+                class="cursor-pointer hover:bg-slate-50 transition-colors"
+            >
+                    <div class="flex flex-col">
+            <span class="font-medium">{ab.deskripsi}</span>
+            
+            {#if expandedId === ab.id}
+              <div transition:slide={{ duration: 200 }} class="mt-2 text-sm text-muted-foreground grid grid-cols-1 gap-1 border-t pt-2">
+                <div><span class="font-semibold">Merk:</span> {ab.merk ?? '-'}</div>
+                <div><span class="font-semibold">Model:</span> {ab.tipe ?? '-'}</div>
+                <div><span class="font-semibold">Kapasitas:</span> {ab.kapasitas ?? '-'} CC</div>
+              </div>
+            {/if}
+          </div>
+                </Table.Cell>
+                <Table.Cell>{ab.lokasiSaatIni}</Table.Cell>
+                <Table.Cell>{new Date(
+                  ab.penggunaan && ab.penggunaan.length > 0
+                    ? ab.penggunaan[ab.penggunaan.length - 1]
+                        .tanggalSelesai
+                    : null,
+                ).toLocaleString()}</Table.Cell>
+            </Table.Row>
+        {/each}
+        </Table.Body>
+      </Table.Root>
+      </div>
     </div>
-    <div class="flex-1">
-        <h2 class="text-xl font-semibold mb-5">Alat Berat Standby</h2>
-        <p>Alat berat yang sedang tidak digunakan.</p>
-        <div class="table-container mt-2 rounded-2xl">
-        <table class="table border  rounded-2xl border-gray-500 w-full mt-2">
-            <thead>
-                <tr>
-                    <th>Nama Aset</th>
-                    <th>Lokasi</th>
-                    <th>Terakhir Beroperasi</th>
-                </tr>
-            </thead>
-            <tbody class="[&>tr]:hover:preset-tonal-primary">
-                {#each data.alatBeratStandby as aktif (aktif.id)}
-                    <tr>
-                        <td><a href="/alatberat/{aktif.nup}">{aktif.nup} {aktif.deskripsi}</a></td>
-                        <td>{aktif.lokasi}</td>
-                        <td>{new Date(aktif.penggunaan && aktif.penggunaan.length > 0 ? aktif.penggunaan[aktif.penggunaan.length - 1].tanggalSelesai : null).toLocaleString()}</td>
-                    </tr>
-                {:else}
-                    <tr>
-                        <td colspan="3" class="text-center italic opacity-50 py-10">
-                            Belum ada data alat berat.
-                        </td>
-                    </tr>
-                {/each}
-            </tbody>
-        </table>
-    </div>
-</div>
-</div>
+  </div>
+
 <div class="flex flex-row gap-4">
-    <Card title="Alat Berat Idle">
-        <p>Alat berat yang sedang tidak dioperasikan.</p>
-        <button type="button" class="btn preset-filled-primary-500">Booking</button>
-    </Card>
-    <Card title="Pemeliharaan Terjadwal">
-        <p>Daftar pemeliharaan yang sudah dijadwalkan.</p>
-    </Card>
-    <Card title="Sparepart Kritis">
-        <p>Daftar sparepart yang stoknya kritis.</p>
-    </Card>
+  <Card title="Alat Berat Idle">
+    <p>Alat berat yang sedang tidak dioperasikan.</p>
+    <button type="button" class="btn preset-filled-primary-500">Booking</button>
+  </Card>
+  <Card title="Pemeliharaan Terjadwal">
+    <p>Daftar pemeliharaan yang sudah dijadwalkan.</p>
+  </Card>
+  <Card title="Sparepart Kritis">
+    <p>Daftar sparepart yang stoknya kritis.</p>
+  </Card>
 </div>

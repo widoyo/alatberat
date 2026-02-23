@@ -1,0 +1,1 @@
+ALTER TABLE `aset_runtime` ADD `is_inspected` integer DEFAULT false NOT NULL;

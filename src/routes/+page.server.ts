@@ -1,4 +1,4 @@
-import { aset, users, penggunaanAset } from "$lib/server/db/schema";
+import { aset, users, penggunaanAset, operator } from "$lib/server/db/schema";
 import type { Actions, PageServerLoad } from './$types'; 
 import * as auth from '$lib/server/auth';
 import { db } from '$lib/server/db'; 
@@ -20,18 +20,19 @@ export const actions: Actions = {
 };
 
 export const load: PageServerLoad = async () => { 
-    try { 
+    try {
+        const semuaAlatberat = await asetService.getAll();
         const alatOnDuty = await asetService.getAlatBeratOnDuty();
         
         const alatStandby = await asetService.getAlatBeratOnIdle();
 
-        const allOperator = await db
-            .select()
-            .from(users)
-            .where(eq(users.role, "operator"))
-            .orderBy(desc(users.username))
-            .all();
-        return { alatBeratOnDuty: alatOnDuty, operators: allOperator, alatBeratStandby: alatStandby }; 
+        const allOperator = await db.query.operator.findMany({
+            where: isNull(operator.deletedAt),
+        });
+
+        return {
+            semuaAlatberat: semuaAlatberat, 
+            alatBeratOnDuty: alatOnDuty, operators: allOperator, alatBeratStandby: alatStandby }; 
     } 
     catch (e) { 
         return { 

@@ -1,12 +1,12 @@
 import { db } from '../index';
-import { aset, penggunaanAset } from '../schema';
+import { aset, penggunaanAset, asetRuntime } from '../schema';
 import { eq, isNull, isNotNull, notExists, and, sql } from 'drizzle-orm';
 
 export const asetService = {
     // 1. Ambil semua aset yang belum dihapus (Soft Delete)
     getAll: async () => {
         return await db.query.aset.findMany({
-            where: isNull(aset.deletedAt),
+            where: and(eq(aset.kategoriAset, 'alat berat'), isNull(aset.deletedAt)),
             orderBy: (table, { asc }) => [asc(table.nup)]
         });
     },
@@ -17,7 +17,6 @@ export const asetService = {
             where: and(eq(aset.id, id), isNull(aset.deletedAt)),
             with: {
                 penggunaan: {
-                    with: { proyek: true },
                     orderBy: (table, { desc }) => [desc(table.tanggalMulai)]
                 },
                 bahanbakar: {
@@ -62,7 +61,6 @@ export const asetService = {
             with: {
                 penggunaan: {
                     where: isNull(penggunaanAset.tanggalSelesai),
-                    with: { proyek: true }
                 }
             },
             // Filter hanya aset yang memiliki data penggunaan aktif
@@ -107,7 +105,6 @@ export const asetService = {
             where: and(eq(aset.nup, nup), isNull(aset.deletedAt)),
             with: {
                 penggunaan: {
-                    with: { proyek: true },
                     orderBy: (table, { desc }) => [desc(table.tanggalMulai)]
                 },
                 bahanbakar: {
@@ -116,5 +113,37 @@ export const asetService = {
             }
         });
     },
+/**
+     * Mengecek apakah aset layak untuk dimunculkan tombol "Entry Penggunaan Baru"
+     * Logic: Harus sudah diinspeksi (isInspected === true)
+     */
+    checkKelayakanPenggunaan: (data: any) => {
+        const reasons = [];
 
+        // 1. Cek status inspeksi
+        // Kita gunakan perbandingan yang kuat (strict)
+        if (data.isInspected !== true && data.isInspected !== 1) {
+            reasons.push("Alat belum melewati tahap inspeksi pasca penggunaan terakhir.");
+        }
+
+        // Anda bisa tambah logic lain di sini nanti, misal:
+        // if (data.status === 'BREAKDOWN') reasons.push("Alat dalam kondisi rusak.");
+
+        return {
+            isReady: reasons.length === 0,
+            reasons: reasons
+        };
+    },
+
+    // Tambahkan juga fungsi pembantu untuk update
+    updateInspeksi: async (db: any, id: number) => {
+        if (!id) throw new Error("ID tidak valid");
+
+        // Pastikan sintaks Drizzle ini tepat untuk SQLite
+        return await db.update(asetRuntime)
+            .set({ 
+                isInspected: 1 // Di SQLite, boolean sering disimpan sebagai 0 atau 1
+            })
+            .where(eq(asetRuntime.asetId, id));
+    }
 };
