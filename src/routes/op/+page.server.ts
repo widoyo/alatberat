@@ -1,130 +1,89 @@
-import { fail, redirect } from '@sveltejs/kit';
-import { z } from 'zod';
-import type { Actions } from './$types';
 import { db } from '$lib/server/db';
-import { eq, and, gt } from 'drizzle-orm';
-import { aktifitasAlat, aset, asetRuntime, operator } from '$lib/server/db/schema';
-import crypto from 'node:crypto';
+import { operator } from '$lib/server/db/schema';
+import { eq, sql, and, isNull, gt } from 'drizzle-orm';
+import { fail, redirect } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
 
-// Skema validasi yang teguh
-const otpSchema = z.object({
-    otp: z.string().length(4, "Kode harus tepat 4 digit").regex(/^\d+$/, "Hanya angka diperbolehkan")
-});
+async function createHash(text: string) {
+    const data = new TextEncoder().encode(text);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
-export const load = async ({ cookies }) => {
-    const hashed_id = cookies.get('op_id');
-    if (hashed_id) {
-        const sevenDaysAgo = Math.floor((Date.now() - 7 * 24 * 60 * 60 * 1000) / 1000);
-        const currOperator = await db.query.operator.findFirst({
-            where: (operator, {eq}) => eq(operator.hashedSession, hashed_id),
-            columns: {
-                hashedSession: false,
-                token: false,
-                tokenExpiresAt: false,
-                id: false,
-                deletedAt: false
-            },
-            with: {
-                aktifitas: {
-                    where: (aktifitas, { gte }) => gte(aktifitas.waktuMulai, sevenDaysAgo),
-                    orderBy: (aktifias, { desc }) => [desc(aktifitasAlat.waktuMulai)],
-                    columns: {
-                        waktuMulai: true,
-                        akhirHm: true,
-                        deskripsiAktifitas: true
-                    }
-                }
-            }
-        });
-        const isAuthorized = (currOperator ? true : false);
-        return {
-            isAuthorized: isAuthorized,
-            operator: currOperator
-        }
+export const load = async ({ cookies, request }) => {
+    const sessionCookie = cookies.get('op_pin_session');
+    if (!sessionCookie) return { authenticated: false };
 
-    }
-    return {
-        isAuthorized: false,
-        operator: {}
-    }
+    // Verifikasi Session ke Database
+    const user = await db.query.operator.findFirst({
+        where: and(
+            eq(operator.hashedSession, sessionCookie),
+            // Cek apakah belum melewati jam 24:00 hari ini
+            gt(operator.tokenExpiresAt, new Date())
+        )
+    });
+
+    if (!user) return { authenticated: false };
+
+    return { 
+        authenticated: true, 
+        profile: { nama: user.nama, panggilan: user.panggilan } 
+    };
 };
 
-export const actions: Actions = {
-    verifyOtp: async ({request, cookies}) => {
-        const formData = await request.formData();
-        const data = Object.fromEntries(formData);
+export const actions = {
+    login: async ({ request, cookies }) => {
+        const data = await request.formData();
+        const inputPin = data.get('pin') as string; // Contoh: "56781"
+        const userAgent = request.headers.get('user-agent') || '';
 
-        // Validasi dengan Zod
-        const result = otpSchema.safeParse(data);
-
-        if (!result.success) {
-            return fail(400, { 
-                error: result.error.flatten().fieldErrors.otp?.[0],
-                values: data 
-            });
+        // Query: Cari 4 digit terakhir WA + 1 digit Token
+        const found = await db.select()
+            .from(operator)
+            .where(
+                and(
+                    eq(operator.token, inputPin), // Cek digit terakhir sebagai token
+                    eq(operator.status, 'aktif'),
+                    isNull(operator.deletedAt)
+                )
+            )
+            .limit(1)
+            .then(res => res[0]);
+        console.log("Login attempt with PIN: ", inputPin, " - Found user: ", found ? found.nama : "None");
+        if (!found) {
+            return fail(401, { message: 'PIN salah atau akses ditolak' });
         }
 
-        const validOtp = result.data.otp;
+        // Buat Hash Sesi (PIN + Secret + UserAgent)
+        const secret = env.OP_SECRET_KEY || 'default_secret';
+        const sessionHash = await createHash(`${inputPin}-${secret}-${userAgent}`);
 
-        // Simulasi pengecekan database SQLite nanti
+        // Update ke Database
+        const midnight = new Date();
+        midnight.setHours(24, 0, 0, 0);
 
-// 1. Ambil data operator berdasarkan token
-        // Kita juga cek tokenExpiresAt harus lebih besar dari waktu sekarang (gt = greater than)
-        const currOperator = await db.query.operator.findFirst({
-            where: (operator, {eq}) => eq(operator.hashedSession, validOtp),
-            columns: {
-                hashedSession: false,
-                token: false
-            }
-
-        });
-
-        // 2. Jika tidak ditemukan atau token basi
-        if (!currOperator) {
-            return fail(401, { 
-                error: "KODE TIDAK VALID ATAU SUDAH EXPIRED",
-                otp: "" 
-            });
-        }
-
-        // 3. Update masa aktif sesi (misal: perpanjang 12 jam dari sekarang)
-        // Ini agar operator tidak perlu input OTP setiap 5 menit
-        const newExpiry = new Date(Date.now() + 1000 * 60 * 60 * 12);
-        const hashedSession = crypto.createHash('sha256').update(String(currOperator.id)).digest('hex');
         await db.update(operator)
             .set({ 
-                tokenExpiresAt: newExpiry,
-                hashedSession: hashedSession
+                hashedSession: sessionHash,
+                tokenExpiresAt: midnight
             })
-            .where(eq(operator.id, currOperator.id));
+            .where(eq(operator.id, found.id));
 
-        // 4. Pasang Cookie 'op_id' (Tanpa Lucia, sesuai rencana kita)
-        cookies.set('op_id', hashedSession, {
-            path: '/',
+        // Set Cookie
+        const maxAge = Math.floor((midnight.getTime() - Date.now()) / 1000);
+        cookies.set('op_pin_session', sessionHash, {
+            path: '/op',
             httpOnly: true,
-            sameSite: 'lax',
-            expires: newExpiry
+            sameSite: 'strict',
+            maxAge: maxAge
         });
 
-        // 5. Lempar ke Dashboard
-        throw redirect(303, '/op');
+        return { success: true };
     },
-    logout: async (event) => {
-        const opId = event.cookies.get('op_id');
 
-        if (opId) {
-            // "Slow and Low": Matikan token di DB agar tidak bisa dipakai lagi
-            await db.update(operator)
-                .set({ 
-                    tokenExpiresAt: new Date(0), // Set ke masa lalu (1970)
-                })
-                .where(eq(operator.id, Number(opId)));
-        }
-
-        // Hapus cookie dari browser
-        event.cookies.delete('op_id', { path: '/' });
-
-        // Lempar kembali ke halaman login/OTP
+    logout: async ({ cookies }) => {
+        cookies.delete('op_pin_session', { path: '/op' });
         throw redirect(303, '/op');
     }
 };

@@ -1,5 +1,5 @@
 import { db } from '../index';
-import { aset, penggunaanAset, asetRuntime } from '../schema';
+import { aset, penggunaanAset } from '../schema';
 import { eq, isNull, isNotNull, notExists, and, sql } from 'drizzle-orm';
 
 export const asetService = {
@@ -39,7 +39,7 @@ export const asetService = {
     // 4. Update lokasi atau status aset secara cepat
     updateLokasi: async (id: number, lokasiBaru: string) => {
         return await db.update(aset)
-            .set({ lokasiSaatIni: lokasiBaru })
+            .set({ lokasi: lokasiBaru })
             .where(eq(aset.id, id));
     },
 
@@ -135,15 +135,4 @@ export const asetService = {
         };
     },
 
-    // Tambahkan juga fungsi pembantu untuk update
-    updateInspeksi: async (db: any, id: number) => {
-        if (!id) throw new Error("ID tidak valid");
-
-        // Pastikan sintaks Drizzle ini tepat untuk SQLite
-        return await db.update(asetRuntime)
-            .set({ 
-                isInspected: 1 // Di SQLite, boolean sering disimpan sebagai 0 atau 1
-            })
-            .where(eq(asetRuntime.asetId, id));
-    }
 };

@@ -1,154 +1,161 @@
 <script lang="ts">
-  import { Trigger } from "$lib/components/ui/alert-dialog";
-  import { Button, buttonVariants } from "$lib/components/ui/button";
-  import { Badge } from "$lib/components/ui/badge";
-  import * as Tabs from "$lib/components/ui/tabs";
-  import * as Dialog from "$lib/components/ui/dialog";
-  import * as Drawer from "$lib/components/ui/drawer/index.js";
-  import { Input } from "$lib/components/ui/input";
-  import { Label } from "$lib/components/ui/label/index.js";
-  import { IsMobile } from "$lib/components/hooks/is-mobile.svelte";
   import { getDuration } from "$lib/utils/index";
   import { enhance } from "$app/forms";
   import FormFields from "$lib/components/FormFields.svelte";
-
+  import { onMount } from "svelte";
+  
   let { data, form } = $props();
 
-  let penggunaanFormOpen = $state();
-
-  const isMobile = new IsMobile();
+  // Form state for validation
+  let pengguna = $state("");
+  let pic = $state("");
+  let lokasi = $state("");
+  let tanggalMulai = $state("");
+  let estimasiSelesai = $state("");
+  
+  // Derived value for form validity
+  let isFormValid = $derived(
+    pengguna.trim() !== "" && 
+    tanggalMulai.trim() !== ""
+  );
+  
+  // Reset form after successful submission
+  let formElement: HTMLFormElement;
+  
+  function resetForm() {
+    pengguna = "";
+    pic = "";
+    lokasi = "";
+    tanggalMulai = "";
+    estimasiSelesai = "";
+  }
 </script>
 
 <div><span class="text-muted-foreground">BMN</span> {data.alatberat.nup}</div>
 <h1>{data.alatberat.deskripsi}</h1>
 <p>{data.alatberat.keterangan}</p>
 
-<Tabs.Root value="penggunaan" class="w-full py-6 rounded-none">
-  <Tabs.List class="w-full rounded-none">
-    <Tabs.Trigger value="penggunaan" class="text-lg rounded-none"
-      >Penggunaan <Badge variant="secondary"
-        >{data.alatberat.penggunaan.length}</Badge
-      ></Tabs.Trigger
-    >
-    <Tabs.Trigger value="bahanbakar" class="text-lg rounded-none"
-      >Bahan Bakar</Tabs.Trigger
-    >
-    <Tabs.Trigger value="pemeliharaan" class="text-lg rounded-none"
-      >Pemeliharaan</Tabs.Trigger
-    >
-  </Tabs.List>
-  <Tabs.Content value="penggunaan">
-    <div class="">
-      <div class="py-6">
-        <h3>Tambah Penggunaan</h3>
-        <FormFields {form}>
-          {#snippet children({ inputField, checkboxField })}
-            <form method="POST" use:enhance action="?/add">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {@render inputField({
-                  name: "pengguna",
-                  label: "Pengguna",
-                  required: true,
-                })}
-                {@render inputField({
-                  name: "pic",
-                  label: "PIC",
-                })}
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {@render inputField({
-                  name: "tanggalMulai",
-                  label: "Tanggal Mulai",
-                  required: true,
-                  type: "date",
-                })}
-                {@render inputField({
-                  name: "estimasiSelesai",
-                  label: "Estimasi Selesai",
-                  type: "date",
-                })}
-              </div>
-              <Button type="submit" class="mt-4">Simpan</Button>
-            </form>
-          {/snippet}
-        </FormFields>
-      </div>
-      <table class="w-full table-auto border-collapse border border-gray-900">
-        <thead>
-          <tr>
-            <th>Pengguna</th>
-            <th>PIC</th>
-            <th>Tanggal Mulai</th>
-            <th>Estimasi Selesai</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each data.alatberat.penggunaan as penggunaan}
-            <tr>
-              <td>{penggunaan.pengguna}</td>
-              <td>{penggunaan.pic}</td>
-              <td
-                >{new Date(penggunaan.tanggalMulai).toLocaleDateString()} ({getDuration(
-                  penggunaan.tanggalMulai,
-                  penggunaan.estimasiSelesai,
-                )})</td
-              >
-              <td
-                >{penggunaan.estimasiSelesai
-                  ? new Date(penggunaan.estimasiSelesai).toLocaleDateString()
-                  : "-"}</td
-              >
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
-
-    <Dialog.Root>
-      <Dialog.Trigger>
-        <Button class="mt-4">Tambah Penggunaan</Button>
-      </Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay class="fixed inset-0 bg-black/50" />
-        <Dialog.Content
-          class="fixed top-1/2 left-1/2 w-full max-w-md -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded"
-        >
-          <Dialog.Title>Tambah Penggunaan</Dialog.Title>
-          <form
-            onsubmit={(e) => {
-              e.preventDefault();
-              // Handle form submission
-              penggunaanFormOpen.set(false);
-            }}
-            class="space-y-4 mt-4"
+<!-- name of each tab group should be unique -->
+<div class="tabs tabs-border my-4">
+  <input type="radio" name="my_tabs_2" class="tab font-light" aria-label="Penggunaan" />
+  <div class="tab-content border-base-300 bg-base-100 p-10">
+    <div class="py-6">
+      <h3>Catat Penggunaan</h3>
+      <FormFields {form}>
+        {#snippet children({ inputField })}
+          <form 
+            method="POST" 
+            use:enhance
+            action="?/add"
+            bind:this={formElement}
+            onsubmit={resetForm}
           >
-            <div>
-              <Label for="deskripsi">Deskripsi</Label>
-              <Input id="deskripsi" name="deskripsi" required />
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {@render inputField({
+                name: "pengguna",
+                label: "Pengguna",
+                required: true,
+                description: "Nama organisasi pengguna alat berat",
+                value: pengguna,
+                onValueChange: (v:string) => {pengguna = v; console.log("Pengguna:", pengguna, "Is Form Valid?", isFormValid)}
+              })}
+              {@render inputField({
+                name: "pic",
+                label: "PIC",
+                description: "Personil yang bertanggung jawab",
+                value: pic,
+                onValueChange: (v:string) => pic = v
+              })}
             </div>
             <div>
-              <Label for="tanggal">Tanggal</Label>
-              <Input id="tanggal" name="tanggal" type="date" required />
+              {@render inputField({
+                name: "lokasi",
+                label: "Lokasi",
+                description: "Lokasi alat berat digunakan (misal: Desa X, Kecamatan Y)",
+                value: lokasi,
+                onValueChange: (v:string) => lokasi = v
+              })}
             </div>
-            <Button type="submit">Simpan</Button>
-          </form>
-          <Dialog.Close>
-            <Button variant="outline" size="sm" class="absolute top-2 right-2"
-              >X</Button
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {@render inputField({
+                name: "tanggalMulai",
+                label: "Tanggal Mulai",
+                required: true,
+                type: "date",
+                value: tanggalMulai,
+                onValueChange: (v:string) => { tanggalMulai = v; console.log("tanggalMulai:", tanggalMulai, "Is Form Valid?", isFormValid) }
+              })}
+              {@render inputField({
+                name: "estimasiSelesai",
+                label: "Estimasi Selesai",
+                type: "date",
+                value: estimasiSelesai,
+                onValueChange: (v:string) => estimasiSelesai = v
+              })}
+            </div>
+            
+            <!-- Required fields indicator -->
+            <div class="text-xs text-gray-500 mt-2">
+              <span class="text-red-500">*</span> Required fields
+            </div>
+            
+            <!-- Validation feedback -->
+            {#if !isFormValid}
+              <div class="text-sm text-amber-600 mt-2">
+                Please fill in all required fields (Pengguna and Tanggal Mulai)
+              </div>
+            {/if}
+            
+            <button 
+              type="submit" 
+              class="btn btn-primary mt-4" 
+              disabled={!isFormValid}
             >
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
-  </Tabs.Content>
-  <Tabs.Content value="bahanbakar">
-    <p>Konten untuk Bahan Bakar</p>
-  </Tabs.Content>
-  <Tabs.Content value="pemeliharaan">
-    <p>Konten untuk Pemeliharaan</p>
-  </Tabs.Content>
-</Tabs.Root>
+              Simpan
+            </button>
+          </form>
+        {/snippet}
+      </FormFields>
+    </div>
+    
+    <!-- Usage History Table -->
+    <table class="w-full table-auto border-collapse border border-gray-900">
+      <thead>
+        <tr>
+          <th>Pengguna</th>
+          <th>PIC</th>
+          <th>Tanggal Mulai</th>
+          <th>Estimasi Selesai</th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each data.alatberat.penggunaan as penggunaan}
+          <tr>
+            <td>{penggunaan.pengguna}</td>
+            <td>{penggunaan.pic}</td>
+            <td
+              >{new Date(penggunaan.tanggalMulai).toLocaleDateString()} ({getDuration(
+                penggunaan.tanggalMulai,
+                penggunaan.estimasiSelesai,
+              )})</td
+            >
+            <td
+              >{penggunaan.estimasiSelesai
+                ? new Date(penggunaan.estimasiSelesai).toLocaleDateString()
+                : "-"}</td
+            >
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
+
+  <input type="radio" name="my_tabs_2" class="tab font-light" aria-label="Bahan Bakar" checked="checked" />
+  <div class="tab-content border-base-300 bg-base-100 p-10">Tab content 2</div>
+
+  <input type="radio" name="my_tabs_2" class="tab font-light" aria-label="Pemeliharaan" />
+  <div class="tab-content border-base-300 bg-base-100 p-10">Tab content 3</div>
+</div>
 
 <style>
   th {

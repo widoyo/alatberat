@@ -40,22 +40,8 @@ export const actions = {
 export const load: PageServerLoad = async () => { 
     try { 
         const allOperator = await db
-            .select({
-                id: operator.id,
-                nama: operator.nama,
-                balai: operator.isBalai,
-                lisensi: operator.lisensi,
-                token: operator.token,
-                whatsapp: operator.whatsapp,
-                aset: {
-                    id: aset.id,
-                    nup: aset.nup,
-                    deskripsi: aset.deskripsi
-                }
-            })
+            .select()
             .from(operator)
-            .leftJoin(asetRuntime, eq(operator.id, asetRuntime.currentOperatorId))
-            .leftJoin(aset, eq(asetRuntime.asetId, aset.id))
             .orderBy(operator.nama)
             .all();
         console.log('OPERATORS: ', allOperator.length);

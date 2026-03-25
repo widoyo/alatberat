@@ -1,15 +1,11 @@
 <script lang="ts">
-  import { Button } from "$lib/components/ui/button/index.js";
   import { IdCardLanyardIcon } from "@lucide/svelte";
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-  import * as Table from "$lib/components/ui/table/index.js";
   import { Ellipsis } from "@lucide/svelte";
   import ResponsiveModal from "$lib/components/ResponsiveModal.svelte";
   import { applyAction, enhance } from "$app/forms";
   import FormFields from "$lib/components/FormFields.svelte";
   import { invalidateAll } from '$app/navigation';
-  import { Drop } from "phosphor-svelte";
-
+  
 
   let activeDialog = $state<"add" | "edit" | null>(null);
   let isLoading = $state(false);
@@ -47,88 +43,36 @@
 <div class="min-h-screen">
   <div class="container mx-auto space-y-6">
     <header class="flex justify-between items-center">
-      <h2 class="h2 font-bold tracking-tight">Daftar Operator</h2>
+      <h3>Daftar Operator</h3>
       {#if data.user}
-        <Button variant="outline" onclick={() => (activeDialog = "add")}>
-          + Operator
-        </Button>
+      <button class="btn preset-filled-primary-500" onclick={() => (activeDialog = "add")}>
+        + Operator
+      </button>
       {/if}
     </header>
 
     <div class="rounded-md border border-black overflow-hidden">
-      <Table.Root>
-        <Table.Header>
-          <Table.Row class="border-b-2 border-black">
-            <Table.Head class="font-bold">Nama</Table.Head>
-            <Table.Head class="font-bold">Alat Berat</Table.Head>
-            <Table.Head class="font-bold">WhatsApp</Table.Head>
-            <Table.Head></Table.Head>
-          </Table.Row>
-        </Table.Header>
+    <table class="table table-zebra w-full border-separate border-spacing-0">
+      <thead>
+        <tr class="border-b-2 border-black">
+          <th class="font-bold">Nama</th>
+          <th class="font-bold">Alat Berat</th>
+          <th class="font-bold">WhatsApp</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
         {#each data.operators as o (o.id)}
-          <Table.Row>
-            <Table.Cell class="flex items-center gap-2">
-              <span>{o.nama}</span>
-              {#if o.isBalai}
-                <div
-                  class="text-blue-600 flex-shrink-0"
-                  title="Pegawai Internal"
-                >
-                  <IdCardLanyardIcon size={16} strokeWidth={2.5} />
-                </div>
-              {/if}
-            </Table.Cell>
-            <Table.Cell
-              ><a href="/alatberat/{o.aset?.nup}">{o.aset?.deskripsi}</a
-              ></Table.Cell
-            >
-            <Table.Cell>{o.whatsapp}</Table.Cell>
-            <Table.Cell
-              class="sticky right-0 bg-white shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.1)] z-10 w-12 text-center"
-            >
-              <DropdownMenu.Root>
-                <DropdownMenu.Trigger>
-                  <Ellipsis />
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Content
-                  align="end"
-                  class="w-48 bg-white border-black shadow-xl"
-                >
-                  <DropdownMenu.Label class="text-[12px] font-bold border-b-2">
-                    {o.nama}
-                  </DropdownMenu.Label>
-                  <DropdownMenu.Item class="cursor-pointer">
-                    <a
-                      href="https://wa.me/{o.whatsapp}?text=Hello%20{o.token}"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="flex w-full items-center px-2 py-1.5 cursor-pointer"
-                    >
-                      <span>Kirim token: </span>
-                      <kbd class="ml-auto text-muted-foreground">{o.token}</kbd>
-                    </a>
-                  </DropdownMenu.Item>
-
-                  <DropdownMenu.Item
-                    class="cursor-pointer"
-                    on:click={() => {
-                      navigator.clipboard.writeText(o.token);
-                      alert("Token disalin ke clipboard!");
-                    }}><span>Perbarui Token</span>
-                    </DropdownMenu.Item>
-
-                  <DropdownMenu.Item
-                    class="cursor-pointer"
-                    onclick={() => handleEdit(o.id)}
-                  >
-                    <span>Edit...</span>
-                  </DropdownMenu.Item>
-                </DropdownMenu.Content>
-              </DropdownMenu.Root>
-            </Table.Cell>
-          </Table.Row>
+        <tr>
+          <td>{o.nama}</td>
+          <td>{o.alatBerat}</td>
+          <td><a href={`https://wa.me/${o.whatsapp}`} target="_blank" rel="noopener noreferrer">{o.whatsapp}</a></td>
+          <td>
+          </td>
+        </tr>
         {/each}
-      </Table.Root>
+      </tbody>
+    </table>
     </div>
   </div>
 </div>

@@ -1,113 +1,70 @@
 <script lang="ts">
-  import * as InputOTP from "$lib/components/ui/input-otp/index.js";
-  import { REGEXP_ONLY_DIGITS } from "bits-ui";
-  import { enhance } from "$app/forms";
-  import type { PageProps } from "./$types";
-  import { Button } from '$lib/components/ui/button';
+    import { enhance } from '$app/forms';
+    export let data;
+    export let form;
 
-  let { data, form }: PageProps = $props();
-  let otpValue = $state("");
-  let formElement: HTMLFormElement;
+    let pinInput = "";
 
-  function handleComplete() {
-    setTimeout(() => {
-      console.log("formComplete");
-      formElement.requestSubmit();
-    }, 100);
-  }
+    // Reaktif: Kirim form otomatis jika PIN sudah 5 digit
+    $: if (pinInput.length === 5) {
+        const formEl = document.getElementById('pin-form') as HTMLFormElement;
+        formEl?.requestSubmit();
+    }
 </script>
 
-{#if data.isAuthorized}
-<div class="w-full min-h-screen bg-gray-50 px-4"> 
-  
-  <div class="max-w-[768px] mx-auto p-8 bg-white shadow-sm">
-    
-    <header class="mb-6 border-b pb-4">
-        <h1 class="text-2xl font-bold">{data.operator?.nama}</h1>
-        {JSON.stringify(data)}
-    </header>
-
-    <section class="space-y-6">
-        <div class="p-4 rounded-lg">
-            <h2 class="">Aktifitas Seminggu Lalu</h2>
-            </div>
-
-        <div class="border p-4 rounded-lg">
-            <h3 class="font-medium mb-3">Input Aktifitas Baru</h3>
-            <p class="text-sm text-gray-500 italic text-low">"Slow and Low" - Catat dengan teliti.</p>
-        </div>
-
-        <div class="border p-4 rounded-lg ">
-            <h3 class="font-medium">Laporan Gejala Alat</h3>
-            </div>
-    </section>
-
-    <footer class="mt-10 pt-6 border-t flex justify-end">
-        <form method="POST" action="?/logout">
-            <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors">
-                Logout
-            </button>
-        </form>
-    </footer>
-    
-  </div>
-</div>
-{:else}
-  <div class="flex w-full items-center px-4">
-    <h1 class="mx-auto">Masuk</h1>
-    <div class="flex flex-col w-full items-center px-4">
-      <form
-        bind:this={formElement}
-        method="POST"
-        action="?/verifyOtp"
-        use:enhance={() => {
-          return async ({ update }) => {
-            // Reset OTP jika terjadi error agar operator bisa input ulang
-            await update({ reset: false });
-            if (form?.error) otpValue = "";
-          };
-        }}
-        class="mb-5"
-      >
-        <InputOTP.Root
-          maxlength={4}
-          pattern={REGEXP_ONLY_DIGITS}
-          bind:value={otpValue}
-          onComplete={handleComplete}
-        >
-          {#snippet children({ cells })}
-            <InputOTP.Group>
-              {#each cells as cell (cell)}
-                <InputOTP.Slot
-                  {cell}
-                  class="text-4xl font-bold font-block w-16 h-20 border-2 transition-colors {form?.error
-                    ? 'border-red-500'
-                    : 'border-gray-200'}"
+<div class="op-container">
+    {#if !data.authenticated}
+        <div class="pin-box">
+            <h2>Operator Access</h2>
+            <p>Masukkan 5-digit PIN</p>
+            
+            <form id="pin-form" method="POST" action="?/login" use:enhance>
+                <input 
+                    type="password" 
+                    name="pin" 
+                    bind:value={pinInput} 
+                    maxlength="5" 
+                    inputmode="numeric"
+                    autocomplete="one-time-code"
+                    autofocus
+                    class="pin-input"
                 />
-              {/each}
-            </InputOTP.Group>
-          {/snippet}
-        </InputOTP.Root>
-        <input type="hidden" name="otp" value={otpValue} />
-        <p class="text-xs text-gray-400 font-mono italic">
-          Menunggu input 4 digit kode alat...
-        </p>
-        <div class="h-6">
-          {#if form?.error}
-            <p
-              class="text-sm font-bold text-red-600 bg-red-50 px-4 py-1 rounded-full animate-in fade-in slide-in-from-top-1"
-            >
-              {form.error}
-            </p>
-          {:else}
-            <p
-              class="text-xs text-gray-400 font-mono tracking-widest uppercase"
-            >
-              Masukkan 4 Digit Kode Unit
-            </p>
-          {/if}
+            </form>
+            {#if form?.message}<p class="error">{form.message}</p>{/if}
         </div>
-      </form>
-    </div>
-  </div>
-{/if}
+
+    {:else}
+        <header>
+            <h1>Dashboard Operator</h1>
+            <form method="POST" action="?/logout" use:enhance>
+                <button class="btn-logout">Logout</button>
+            </form>
+        </header>
+
+        <section class="entry-section">
+            <form method="POST" action="?/entry" use:enhance>
+                <input type="text" name="catatan" placeholder="Entry data mesin..." required />
+                <button type="submit">Simpan</button>
+            </form>
+        </section>
+
+        <section class="history-section">
+            <h3>Entry Terakhir</h3>
+            <ul>
+                {#each data.history as item}
+                    <li><strong>{item.time}</strong>: {item.info}</li>
+                {/each}
+            </ul>
+        </section>
+    {/if}
+</div>
+
+<style>
+    .op-container { max-width: 600px; margin: 2rem auto; font-family: sans-serif; }
+    .pin-box { text-align: center; border: 1px solid #ccc; padding: 2rem; border-radius: 8px; }
+    .pin-input { font-size: 2.5rem; width: 160px; text-align: center; letter-spacing: 0.5rem; }
+    .error { color: red; margin-top: 1rem; }
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 1rem; }
+    .btn-logout { background: #ff4444; color: white; border: none; padding: 0.5rem 1rem; cursor: pointer; }
+    .entry-section { margin: 2rem 0; padding: 1rem; background: #f9f9f9; }
+</style>

@@ -2,6 +2,10 @@
 import { relations } from 'drizzle-orm';
 import * as table from './schema';
 
+export const operatorRelations = relations(table.operator, ({ many }) => ({
+    listAlatberat: many(table.aset),
+}));
+
 export const penggunaanAsetRelations = relations(table.penggunaanAset, ({ one }) => ({
     aset: one(table.aset, {
         fields: [table.penggunaanAset.asetId],
@@ -32,33 +36,3 @@ export const aktifitasAlatRelations = relations(table.aktifitasAlat, ({ one }) =
     }),
 }));
 
-// 1. Relasi untuk Tabel Aset
-export const asetRelations = relations(table.aset, ({ one }) => ({
-    runtime: one(table.asetRuntime, {
-        fields: [table.aset.id],
-        references: [table.asetRuntime.asetId],
-    }),
-}));
-
-// 2. Relasi untuk Tabel AsetRuntime (Jembatan)
-export const asetRuntimeRelations = relations(table.asetRuntime, ({ one }) => ({
-    aset: one(table.aset, {
-        fields: [table.asetRuntime.asetId],
-        references: [table.aset.id],
-    }),
-    operator: one(table.operator, {
-        fields: [table.asetRuntime.currentOperatorId],
-        references: [table.operator.id],
-    }),
-}));
-
-// 3. Relasi untuk Tabel Operator
-export const operatorRelations = relations(table.operator, ({ one, many }) => ({
-    // Relasi ke status alat yang sedang dibawa saat ini (1-to-1 via Runtime)
-    currentAsetRuntime: one(table.asetRuntime, {
-        fields: [table.operator.id],
-        references: [table.asetRuntime.currentOperatorId],
-    }),
-    // Relasi ke sejarah aktifitas (1-to-many)
-    aktifitas: many(table.aktifitasAlat),
-}));

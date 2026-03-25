@@ -1,158 +1,122 @@
 <script lang="ts">
-  import './layout.css';
-  import { onMount, type Snippet } from "svelte";
-  import Navbar from '$lib/components/Navbar.svelte';
-  import * as Button from "$lib/components/ui/button/index.js";
-  import favicon from '$lib/assets/pu.ico';
-  import Excavator from '$lib/assets/excavator.svg';
-  import { Moon, Sun } from '@lucide/svelte';
-  import { enhance } from '$app/forms';
-  import { IsMobile } from '$lib/components/hooks/is-mobile.svelte.js';
-  import { page } from '$app/state';
+  import "./layout.css";
+  import { onMount } from "svelte";
+  import { Moon, Sun, Menu, LayoutDashboard, Construction, Users, Info } from "@lucide/svelte";
+  import { page } from "$app/state";
   import { scale } from "svelte/transition";
-	import { cubicOut } from "svelte/easing";
+  import { cubicOut } from "svelte/easing";
 
-  
-  let { children, data } = $props();
+  let { children } = $props();
   let theme = $state("light");
-  const isMobile = new IsMobile();
-  let isOpRoute = $derived(/^\/op(\/|$)/.test(page.url.pathname));
+  let drawerOpen = $state(false); 
+
+  // Cek apakah route diawali dengan /op
+  let isOpRoute = $derived(page.url.pathname.startsWith('/op'));
 
   onMount(() => {
-// 1. Cek apakah ada tema yang tersimpan sebelumnya
-    const savedTheme = localStorage.getItem("theme");
-    
-    if (savedTheme) {
-      // Jika ada di localStorage, gunakan itu
-      theme = savedTheme;
-    } else {
-      // Jika tidak ada (user baru), baru ikuti preferensi sistem
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
-      theme = systemTheme;
-    }
+    const savedTheme = localStorage.getItem("theme") || 
+      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    theme = savedTheme;
   });
 
-  // Logika flip logo yang tetap Anda pertahankan
-  let isFlipped = $state(false);
   $effect(() => {
-// Membaca 'theme' di sini membuat effect ini reaktif
-    const currentTheme = theme; 
-    
-    if (typeof window !== 'undefined') {
-      // Update class di <html>
-      document.documentElement.className = currentTheme;
-      
-      // Simpan ke localStorage
-      localStorage.setItem("theme", currentTheme);
-      
-      console.log("Effect berjalan, theme sekarang:", currentTheme);
+    if (typeof window !== "undefined") {
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("theme", theme);
     }
-    
-    const randomDelay = Math.floor(Math.random() * (5000)) + 2000;
-    const timer = setTimeout(() => { isFlipped = true; }, randomDelay);
-    return () => clearTimeout(timer);
   });
 
   function toggleTheme() {
-    console.log("Tombol toggle diklik, theme saat ini:", theme);
-		theme = theme === "light" ? "dark" : "light";
-	}
+    theme = theme === "light" ? "dark" : "light";
+  }
 </script>
 
-<svelte:head>
-  <link rel="icon" type="image/x-icon" href="{favicon}" />
-  <title>Si Mantab</title>
-</svelte:head>
-
-{#if !isOpRoute }
-<div class="@container min-h-screen  bg-background text-foreground font-sans antialiased" {theme}>
-  
-  <div class="mx-auto max-w-[768px] min-h-screen bg-white flex flex-col border-x border-gray-100 shadow-sm">
-    
-    <header class="sticky top-0 z-50 bg-background border-b-4 border-[#ffbe0b]">
-      <div class="px-6 py-4 flex items-center justify-between">
-        <a href="/" class="block transition-transform duration-700 {isFlipped ? 'scale-x-[-1]' : ''}">
-           <img src={Excavator} width="36" alt="Logo" class="opacity-90">
-        </a>
-        
-        <div class="flex items-center gap-6">
-          {#if isMobile.current}
-            <span class="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Mobile Mode</span>
-          {:else}
-            <Navbar />
-          {/if}
-
-          <div class="flex items-center">
-            {#if data.user}
-              <form method="POST" action="/?/logout" use:enhance>
-                <button class="hover:text-red-600 transition-colors">Logout</button>
-              </form>
-            {:else}
-              <a href="/login" class="px-4 py-1.5 bg-black text-white text-xs font-bold rounded uppercase tracking-widest hover:bg-gray-800 transition-all">Login</a>
-            {/if}
-            <div class="ml-4">
-            {@render ThemeToggle()}
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <main class="flex-1 bg-background px-6 py-10 md:px-12">
+{#if isOpRoute}
+  <div class="min-h-screen bg-base-100 flex flex-col font-sans antialiased overflow-x-hidden">
+    <main class="flex-1 w-full max-w-md mx-auto shadow-sm min-h-screen bg-base-100">
       {@render children()}
     </main>
-
-    <footer class="px-12 py-8 border-t border-black">
-      <p class="font-medium text-center">
-        Hak Cipta © 2026 BBWS Sumatera VIII
-      </p>
-    </footer>
   </div>
-</div>
+
 {:else}
-<div class="@container min-h-screen bg-background text-foreground font-sans antialiased {theme}">
-  
-  <div class="mx-auto max-w-[768px] min-h-screen bg-white flex flex-col border-x border-gray-100 shadow-sm">
-{@render children()}
-</div>
-</div>
+  <div class="drawer lg:drawer-open min-h-screen bg-base-200">
+    <input id="main-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
+    
+    <div class="drawer-content flex flex-col">
+      <header class="navbar bg-base-100 border-b border-base-300 sticky top-0 z-30 px-4">
+        <div class="flex-none lg:hidden">
+          <label for="main-drawer" class="btn btn-square btn-ghost">
+            <Menu />
+          </label>
+        </div>
+        <div class="flex-1 px-2">
+          <span class="text-xl font-bold tracking-tight">siMantab <span class="text-xs font-normal opacity-50">Admin</span></span>
+        </div>
+        <div class="flex-none">
+          {@render ThemeToggle()}
+        </div>
+      </header>
+
+      <main class="p-4 md:p-8 flex-1">
+        <div class="max-w-[1400px] mx-auto">
+          {@render children()}
+        </div>
+        
+        <footer class="mt-20 py-8 border-t border-base-300 text-center opacity-70">
+          <p class="text-sm">Hak Cipta © 2026 BBWS Sumatera VIII</p>
+        </footer>
+      </main>
+    </div> 
+
+    <aside class="drawer-side z-40">
+      <label for="main-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+      <div class="menu p-4 w-72 min-h-full bg-base-100 border-r border-base-300 text-base-content">
+        <div class="mb-10 px-4 py-4 flex items-center gap-3">
+          <div class="size-10 bg-primary rounded-lg flex items-center justify-center text-primary-content">
+            <Construction size={24} />
+          </div>
+          <span class="text-2xl font-black tracking-tighter italic">SI-MANTAB</span>
+        </div>
+        
+        <ul class="space-y-1">
+          <li>
+            <a href="/" class={page.url.pathname === '/' ? 'active' : ''}>
+              <LayoutDashboard size={18}/> Dashboard Utama
+            </a>
+          </li>
+          <div class="divider text-[10px] opacity-50 uppercase tracking-widest">Manajemen</div>
+          <li>
+            <details open>
+              <summary><Construction size={18}/> Aset Alat Berat</summary>
+              <ul class="before:opacity-20">
+                <li><a href="/alatberat" class={page.url.pathname === '/alatberat' ? 'active text-primary' : ''}>Daftar Unit</a></li>
+                <li><a href="/alatberat/lokasi">Peta Lokasi</a></li>
+              </ul>
+            </details>
+          </li>
+          <li>
+            <a href="/operator" class={page.url.pathname.startsWith('/operator') ? 'active' : ''}>
+              <Users size={18}/> Personel Operator
+            </a>
+          </li>
+          <div class="divider text-[10px] opacity-50 uppercase tracking-widest">Sistem</div>
+          <li><a href="/about"><Info size={18}/> Informasi Bantuan</a></li>
+        </ul>
+
+        <div class="mt-auto p-4 text-center italic opacity-30 text-xs">
+          "Slow and Low"
+        </div>
+      </div>
+    </aside>
+  </div>
 {/if}
 
 {#snippet ThemeToggle()}
-	<Button.Root
-		onclick={toggleTheme}
-		role="switch"
-		aria-label="Light Switch"
-		aria-checked={theme === "light"}
-		title="Toggle {theme === 'dark' ? 'Dark' : 'Light'} Mode"
-		class="rounded-input hover:bg-dark-10 focus-visible:ring-foreground focus-visible:ring-offset-background focus-visible:outline-hidden relative inline-flex h-10 w-10 items-center justify-center px-2 focus-visible:ring-2 focus-visible:ring-offset-2"
-	>
-		{#if theme === "light"}
-			<div
-				class="absolute inline-flex h-full w-full items-center justify-center"
-				transition:scale={{
-					delay: 50,
-					duration: 200,
-					start: 0.7,
-					easing: cubicOut,
-				}}
-			>
-				<Moon class="size-6" aria-label="Moon" />
-			</div>
-		{:else}
-			<div
-				class="absolute inline-flex h-full w-full items-center justify-center"
-				transition:scale={{
-					delay: 50,
-					duration: 200,
-					start: 0.7,
-					easing: cubicOut,
-				}}
-			>
-				<Sun class="size-6" aria-label="Sun" />
-			</div>
-		{/if}
-	</Button.Root>
+  <button onclick={toggleTheme} class="btn btn-ghost btn-circle" aria-label="Toggle Theme">
+    {#if theme === "light"}
+      <div transition:scale={{ duration: 200, easing: cubicOut }}><Moon size={20} /></div>
+    {:else}
+      <div transition:scale={{ duration: 200, easing: cubicOut }}><Sun size={20} /></div>
+    {/if}
+  </button>
 {/snippet}

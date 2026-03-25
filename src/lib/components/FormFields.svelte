@@ -1,7 +1,4 @@
 <script lang="ts">
-  // Kita gunakan export let (atau $props di Svelte 5) 
-
-  import Checkbox from "./ui/checkbox/checkbox.svelte";
 
   // untuk mendefinisikan snippet yang bisa dipanggil dari luar
   let { form, children } = $props();
@@ -28,6 +25,7 @@
         class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
         checked={form?.values?.[name] === 'on' || form?.values?.[name] === true || form?.values?.[name] === 1}
       />
+      <p class="text-sm text-slate-500">{description}</p>
     </div>
     <div class="text-sm">
       <label for={name} class="font-medium {form?.errors?.[name] ? 'text-red-500' : 'text-slate-700'} cursor-pointer">
@@ -48,13 +46,19 @@
     label, 
     placeholder = "", 
     required = false, 
-    type = "text" 
+    type = "text",
+    description = "",
+    value = "",
+    onValueChange
 }: { 
     name: string, 
     label: string, 
     placeholder?: string, 
     required?: boolean, 
-    type?: string 
+    type?: string,
+    description?: string,
+    value?: string,
+    onValueChange?: (value: string) => void
 })}
   <div class="grid gap-2 mb-4">
     <label for={name} class="text-sm font-medium {form?.errors?.[name] ? 'text-red-500' : ''}">
@@ -67,16 +71,22 @@
       {required}
       placeholder={placeholder}
       class="border p-2 rounded {form?.errors?.[name] ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-blue-500"
-      value={form?.values?.[name] ?? ""}
+      value={form?.values?.[name] ?? value ?? ''}
+      oninput={(e) => {
+        const newValue = e.currentTarget.value;
+        if (onValueChange) {
+          onValueChange(newValue);
+        }
+      }}
     />
-    
+    {#if description}
+      <p class="text-sm text-slate-500">{description}</p>
+    {/if}
     {#if form?.errors?.[name]}
       <p class="text-[11px] text-red-500 italic">*{form.errors[name]}</p>
-    {:else if required && !form?.values?.[name]}
-       {/if}
+    {/if}
   </div>
 {/snippet}
-
 {#snippet selectField({ 
     name, 
     label, 

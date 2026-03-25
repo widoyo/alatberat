@@ -1,5 +1,6 @@
 import type { RequestEvent } from '@sveltejs/kit';
-import { eq } from 'drizzle-orm';
+import type { InferInsertModel } from 'drizzle-orm';
+import { eq, isNotNull } from 'drizzle-orm';
 import { sha256 } from '@oslojs/crypto/sha2';
 import { encodeBase64url, encodeHexLowerCase } from '@oslojs/encoding';
 import { db } from '$lib/server/db';
@@ -8,23 +9,50 @@ import * as table from '$lib/server/db/schema';
 const DAY_IN_MS = 1000 * 60 * 60 * 24;
 
 export const sessionCookieName = 'auth-session';
+type Session = InferInsertModel<typeof table.session>;
+type SessionPin = {expiresAt: Date};
 
-export function generateSessionToken() {
-	const bytes = crypto.getRandomValues(new Uint8Array(18));
-	const token = encodeBase64url(bytes);
-	return token;
+export async function generateUniquePin(): Promise<string> {
+    // Ambil semua token yang sudah terpakai
+    const existing = await db.select({ token: table.operator.token })
+        .from(table.operator)
+        .where(isNotNull(table.operator.token));
+    
+    const usedPins = new Set(existing.map(o => o.token));
+
+    let pin = "";
+    while (true) {
+        pin = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        if (!usedPins.has(pin)) break; 
+    }
+
+    return pin;
 }
 
-export async function createSession(token: string, userId: string) {
-	const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
-	const session = {
-		id: sessionId,
-		userId,
-		expiresAt: new Date(Date.now() + DAY_IN_MS * 30)
-	};
-	await db.insert(table.session).values(session);
-	return session;
+export async function updateSessionPin(pin: string, operatorId: number): Promise<SessionPin> {
+    const sessionPin = {
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30)
+    };
+
+    await db.update(table.operator).set(sessionPin).where(eq(table.operator.id, operatorId));
+    return sessionPin;
 }
+
+export async function createSession(token: string, userId: number): Promise<Session> {
+    const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
+    
+    const session: Session = {
+        id: sessionId,
+        userId,
+        // Svelte/Drizzle butuh Date object untuk timestamp di SQLite (mode: timestamp)
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30) 
+    };
+
+    await db.insert(table.session).values(session);
+    return session;
+}
+
+export async function validateSessionPin(pin: string) {}
 
 export async function validateSessionToken(token: string) {
 	const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));

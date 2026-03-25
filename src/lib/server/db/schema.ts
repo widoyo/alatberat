@@ -37,46 +37,27 @@ export const aset = sqliteTable("aset", {
 	kategoriAset: text("kategori_aset").notNull(),
 	deskripsi: text(),
 	nilaiPerolehan: integer("nilai_perolehan"),
-	tanggalPerolehan: integer("tanggal_perolehan"),
+	tahunPerolehan: integer("tahun_perolehan"), // angka tahun
 	merk: text(),
 	tipe: text(),
-	kapasitas: integer(),
+	noLambung: text("no_lambung"),
+	noMesin: text("no_mesin"),
+	noRangka: text("no_rangka"),
+	penanggungJawab: text("penanggung_jawab"), // nama personil yang bertanggung jawab
+	volBahanbakar: real("vol_bahanbakar"), // vol terakhir dalam persen (%)
+	workHour: real("work_hour"), // wh terakhir dalam jam mesin (HM)
 	tahunPembuatan: integer("tahun_pembuatan"),
-	lokasiSaatIni: text("lokasi_saat_ini"),
+	lokasi: text("lokasi"), // lokasi terakhir diketahui
 	createdAt: integer("created_at").default(sql`(CURRENT_TIMESTAMP)`),
 	createdBy: integer("created_by").references(() => users.id),
 	deletedAt: integer("deleted_at"),
+	operatorId: integer("operator_id").references(() => operator.id),
 },
 (table) => [
 	index("idx_aset_kategori").on(table.kategoriAset),
 	index("idx_aset_deleted").on(table.deletedAt),
 ]);
 
-// RUNTIME: State dinamis (Internal Developer Only)
-// Untuk menyimpan data terkini operasional alat, diupdate dari berbagai situasi
-export const asetRuntime = sqliteTable("aset_runtime", {
-    asetId: integer("aset_id").primaryKey().references(() => aset.id, { onDelete: 'cascade' }),
-
-	// Diupdate ketika membuat PenggunaanAset, atau perubahan ditengah perjalanan, misalnya Operator asli ijin dalam waktu lama
-    currentOperatorId: integer("current_operator_id").references(() => operator.id).unique(),
-	// Diupdate manual, atau berbasis entry aktifitasAset oleh Operator
-    lastHm: real("last_hm").default(0).notNull(),
-	// diupdate dari inspeksi atau diset paksa oleh admin
-    statusKondisi: text("status_kondisi").default("baik"),
-	// diisi otomatis saat data baru inspeksi diisi 
-	isInspected: integer("is_inspected").references(() => inspeksiKeamanan.id),
-	// update terakhir data ini
-    lastUpdate: integer("last_update").default(sql`(CURRENT_TIMESTAMP)`)
-});
-
-export const proyek = sqliteTable("proyek", {
-	id: integer().primaryKey({ autoIncrement: true }),
-	nama: text().notNull(),
-	lokasi: text().notNull(),
-	tanggalMulai: integer("tanggal_mulai"),
-	estimasiSelesai: integer("estimasi_selesai", {mode: "timestamp"}),
-	tanggalSelesai: integer("tanggal_selesai", {mode: "timestamp"}),
-});
 
 export const penggunaanAset = sqliteTable("penggunaan_aset", {
 	/* Data Pemesanan dan aktualisasi Penggunaan alat*/
@@ -117,24 +98,6 @@ export const penggunaanAset = sqliteTable("penggunaan_aset", {
 	index("idx_penggunaan_alat_deleted").on(table.deletedAt)
 ]);
 
-export const inspeksiKeamanan = sqliteTable("inspeksi_keamanan", {
-	id: integer().primaryKey({ autoIncrement: true }),
-	asetId: integer("aset_id").references(() => aset.id),
-	penggunaanAlatId: integer("penggunaan_alat_id").references(() => penggunaanAset.id),
-	tanggalInspeksi: integer("tanggal_inspeksi").notNull(),
-	inspeksiOleh: text("inspeksi_oleh").notNull(),
-	statusPenggerakOk: integer("status_penggerak_ok").default(sql`(TRUE)`),
-	catatanPenggerak: text("catatan_penggerak"),
-	statusHidrolikOk: integer("status_hidrolik_ok").default(sql`(TRUE)`),
-	catatanHidrolik: text("catatan_hidrolik"),
-	statusKelistrikanOk: integer("status_kelistrikan_ok").default(sql`(TRUE)`),
-	catatanKelistrikan: text("catatan_kelistrikan"),
-	catatanHasilInspeksi: text("catatan_hasil_inspeksi").notNull(),
-	tindakanPerbaikan: text("tindakan_perbaikan"),
-	createdAt: integer("created_at").default(sql`(CURRENT_TIMESTAMP)`),
-	createdBy: integer("created_by").references(() => users.id),
-	deletedAt: integer("deleted_at"),
-});
 
 export const aktifitasAlat = sqliteTable("aktifitas_alat", {
 	id: integer().primaryKey({ autoIncrement: true }),
@@ -153,6 +116,20 @@ export const aktifitasAlat = sqliteTable("aktifitas_alat", {
 (table) => [
 	index("idx_aset_id").on(table.asetId),
 	index("idx_aktifitas_alat_deleted").on(table.deletedAt),
+]);
+
+export const kendalaAset = sqliteTable("kendala_aset", {
+	id: integer().primaryKey({ autoIncrement: true }),
+	asetId: integer("aset_id").references(() => aset.id),
+	tanggal: integer("tanggal").notNull(),
+	deskripsi: text("deskripsi").notNull(),
+	createdAt: integer("created_at").default(sql`(CURRENT_TIMESTAMP)`),
+	createdBy: integer("created_by").references(() => users.id),
+	deletedAt: integer("deleted_at"),
+},
+(table) => [
+	index("idx_aset_id_kendala").on(table.asetId),
+	index("idx_kendala_aset_deleted").on(table.deletedAt),
 ]);
 
 export const bahanBakar = sqliteTable("bahan_bakar", {
@@ -237,56 +214,7 @@ export const operator = sqliteTable("operator", {
 	index("idx_operator_deleted").on(table.deletedAt),
 ]);
 
-export const penugasanOperator = sqliteTable("penugasan_operator", {
-	id: integer().primaryKey({ autoIncrement: true }),
-	operatorId: integer("operator_id").references(() => operator.id),
-	asetId: integer("aset_id").references(() => aset.id),
-	tanggalPenugasan: integer("tanggal_penugasan").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
-	durasiJam: integer("durasi_jam").default(0).notNull(),
-	createdAt: integer("created_at").default(sql`(CURRENT_TIMESTAMP)`),
-	createdBy: integer("created_by").references(() => users.id),
-	deletedAt: integer("deleted_at"),
-},
-(table) => [
-	index("idx_tanggal_penugasan").on(table.tanggalPenugasan),
-	index("idx_operator_id_penugasan").on(table.operatorId),
-	index("idx_aset_id_penugasan").on(table.asetId),
-	index("idx_penugasan_operator_deleted").on(table.deletedAt),
-]);
 
-export const sukuCadang = sqliteTable("suku_cadang", {
-	id: integer().primaryKey({ autoIncrement: true }),
-	nama: text().notNull(),
-	stok: integer().default(0),
-	harga: numeric(),
-	createdAt: integer("created_at").default(sql`(CURRENT_TIMESTAMP)`),
-	createdBy: integer("created_by").references(() => users.id),
-	deletedAt: integer("deleted_at"),
-},
-(table) => [
-	index("idx_suku_cadang_stok").on(table.stok),
-	index("idx_suku_cadang_nama").on(table.nama),
-	index("idx_suku_cadang_deleted").on(table.deletedAt),
-]);
-
-export const penggunaanSukuCadang = sqliteTable("penggunaan_suku_cadang", {
-	id: integer().primaryKey({ autoIncrement: true }),
-	sukuCadangId: integer("suku_cadang_id").references(() => sukuCadang.id),
-	asetId: integer("aset_id").references(() => aset.id),
-	tanggalPenggunaan: integer("tanggal_penggunaan").notNull(),
-	jumlah: integer().notNull(),
-	hargaSatuan: numeric("harga_satuan"),
-	totalBiaya: numeric("total_biaya").notNull(),
-	createdAt: integer("created_at").default(sql`(CURRENT_TIMESTAMP)`),
-	createdBy: integer("created_by").references(() => users.id),
-	deletedAt: integer("deleted_at"),
-},
-(table) => [
-	index("idx_tanggal_penggunaan_suku_cadang").on(table.tanggalPenggunaan),
-	index("idx_suku_cadang_id_penggunaan").on(table.sukuCadangId),
-	index("idx_aset_id_penggunaan_suku_cadang").on(table.asetId),
-	index("idx_penggunaan_suku_cadang_deleted").on(table.deletedAt),
-]);
 
 export const jadwalPemeliharaan = sqliteTable("jadwal_pemeliharaan", {
 	id: integer().primaryKey({ autoIncrement: true }),
@@ -304,65 +232,6 @@ export const jadwalPemeliharaan = sqliteTable("jadwal_pemeliharaan", {
 	index("idx_jadwal_pemeliharaan_deleted").on(table.deletedAt),
 ]);
 
-export const vendor = sqliteTable("vendor", {
-	id: integer().primaryKey({ autoIncrement: true }),
-	nama: text().notNull(),
-	kontak: text().notNull(),
-	hp: text(),
-	alamat: text().notNull(),
-	createdAt: integer("created_at").default(sql`(CURRENT_TIMESTAMP)`),
-	createdBy: integer("created_by").references(() => users.id),
-	deletedAt: integer("deleted_at"),
-},
-(table) => [
-	index("idx_vendor_nama").on(table.nama),
-	index("idx_vendor_deleted").on(table.deletedAt),
-]);
-
-export const penerimaanSukuCadang = sqliteTable("penerimaan_suku_cadang", {
-	id: integer().primaryKey({ autoIncrement: true }),
-	vendorId: integer("vendor_id").references(() => vendor.id),
-	sukuCadangId: integer("suku_cadang_id").references(() => sukuCadang.id),
-	tanggalPembelian: integer("tanggal_pembelian").notNull(),
-	jumlah: integer().notNull(),
-	totalBiaya: numeric("total_biaya").notNull(),
-	createdAt: integer("created_at").default(sql`(CURRENT_TIMESTAMP)`),
-	createdBy: integer("created_by").references(() => users.id),
-	deletedAt: integer("deleted_at"),
-},
-(table) => [
-	index("idx_suku_cadang_id_penerimaan").on(table.sukuCadangId),
-	index("idx_vendor_id_penerimaan").on(table.vendorId),
-	index("idx_penerimaan_suku_cadang_deleted").on(table.deletedAt),
-]);
-
-export const auditAset = sqliteTable("audit_aset", {
-	id: integer().primaryKey({ autoIncrement: true }),
-	asetId: integer("aset_id").references(() => aset.id),
-	tanggalAudit: integer("tanggal_audit").notNull(),
-	auditorNama: text("auditor_nama").notNull(),
-	hasilAudit: text("hasil_audit").notNull(),
-	rekomendasi: text(),
-	createdAt: integer("created_at").default(sql`(CURRENT_TIMESTAMP)`),
-	createdBy: integer("created_by").references(() => users.id),
-	deletedAt: integer("deleted_at"),
-},
-(table) => [
-	index("idx_tanggal_audit").on(table.tanggalAudit),
-	index("idx_aset_id_audit").on(table.asetId),
-	index("idx_audit_aset_deleted").on(table.deletedAt),
-]);
-
-export const pelatihanOperator = sqliteTable("pelatihan_operator", {
-	id: integer().primaryKey({ autoIncrement: true }),
-	operatorId: integer("operator_id").references(() => operator.id),
-	tanggalPelatihan: integer("tanggal_pelatihan").notNull(),
-	topik: text().notNull(),
-	penyelenggara: text().notNull(),
-	createdAt: integer("created_at").default(sql`(CURRENT_TIMESTAMP)`),
-	createdBy: integer("created_by").references(() => users.id),
-	deletedAt: integer("deleted_at"),
-});
 
 export const dokumentasiAset = sqliteTable("dokumentasi_aset", {
 	id: integer().primaryKey({ autoIncrement: true }),

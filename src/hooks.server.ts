@@ -1,5 +1,9 @@
 import type { Handle } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import * as auth from '$lib/server/auth';
+import { db } from '$lib/server/db';
+import { eq, and, gt } from 'drizzle-orm';
+import { operator } from '$lib/server/db/schema';
 
 const handleAuth: Handle = async ({ event, resolve }) => {
 	const sessionToken = event.cookies.get(auth.sessionCookieName);
