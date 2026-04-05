@@ -33,6 +33,7 @@ export const unitOrg = sqliteTable("unit_org", {
 
 export const aset = sqliteTable("aset", {
 	id: integer().primaryKey({ autoIncrement: true }),
+	nama: text().notNull(),
 	nup: text().notNull(),
 	kategoriAset: text("kategori_aset").notNull(),
 	deskripsi: text(),
@@ -48,6 +49,7 @@ export const aset = sqliteTable("aset", {
 	workHour: real("work_hour"), // wh terakhir dalam jam mesin (HM)
 	tahunPembuatan: integer("tahun_pembuatan"),
 	lokasi: text("lokasi"), // lokasi terakhir diketahui
+	kondisi: text("kondisi").default('baik').notNull(), // 'baik' / 'rusak' / 'perbaikan'
 	createdAt: integer("created_at").default(sql`(CURRENT_TIMESTAMP)`),
 	createdBy: integer("created_by").references(() => users.id),
 	deletedAt: integer("deleted_at"),
@@ -170,7 +172,7 @@ export const biayaOperasional = sqliteTable("biaya_operasional", {
 export const pemeliharaanAlat = sqliteTable("pemeliharaan_alat", {
 	id: integer().primaryKey({ autoIncrement: true }),
 	asetId: integer("aset_id").references(() => aset.id),
-	tanggal: integer("tanggal").notNull(),
+	tanggal: integer("tanggal", {mode: 'timestamp'}).notNull(),
 	jenisPemeliharaan: text("jenis_pemeliharaan").notNull(),
 	deskripsiPekerjaan: text("deskripsi_pekerjaan"),
 	teknisiNama: text("teknisi_nama"),
@@ -249,3 +251,6 @@ export const dokumentasiAset = sqliteTable("dokumentasi_aset", {
 	index("idx_dokumentasi_aset_deleted").on(table.deletedAt),
 ]);
 
+export type PenggunaanAset = typeof penggunaanAset.$inferSelect;
+export type Aset = typeof aset.$inferSelect;
+export type Operator = typeof operator.$inferSelect;

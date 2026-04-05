@@ -2,6 +2,8 @@
   import { getDuration } from "$lib/utils/index";
   import { enhance } from "$app/forms";
   import FormFields from "$lib/components/FormFields.svelte";
+  let formElement = $state<HTMLFormElement | null>(null);
+
   import { onMount } from "svelte";
   
   let { data, form } = $props();
@@ -18,10 +20,7 @@
     pengguna.trim() !== "" && 
     tanggalMulai.trim() !== ""
   );
-  
-  // Reset form after successful submission
-  let formElement: HTMLFormElement;
-  
+    
   function resetForm() {
     pengguna = "";
     pic = "";
@@ -46,9 +45,8 @@
           <form 
             method="POST" 
             use:enhance
-            action="?/add"
+            action="?/booking"
             bind:this={formElement}
-            onsubmit={resetForm}
           >
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               {@render inputField({

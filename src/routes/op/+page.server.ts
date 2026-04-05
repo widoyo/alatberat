@@ -39,17 +39,18 @@ export const actions = {
         const userAgent = request.headers.get('user-agent') || '';
 
         // Query: Cari 4 digit terakhir WA + 1 digit Token
-        const found = await db.select()
+        const result = await db.select()
             .from(operator)
             .where(
                 and(
-                    eq(operator.token, inputPin), // Cek digit terakhir sebagai token
+                    eq(operator.token, String(inputPin)), // Cek digit terakhir sebagai token
                     eq(operator.status, 'aktif'),
                     isNull(operator.deletedAt)
                 )
             )
-            .limit(1)
-            .then(res => res[0]);
+            .limit(1);
+        console.log("Database query result for PIN: ", inputPin, " - Result: ", result);
+        const found = result[0];
         console.log("Login attempt with PIN: ", inputPin, " - Found user: ", found ? found.nama : "None");
         if (!found) {
             return fail(401, { message: 'PIN salah atau akses ditolak' });
@@ -73,17 +74,17 @@ export const actions = {
         // Set Cookie
         const maxAge = Math.floor((midnight.getTime() - Date.now()) / 1000);
         cookies.set('op_pin_session', sessionHash, {
-            path: '/op',
+            path: '/',
             httpOnly: true,
             sameSite: 'strict',
             maxAge: maxAge
         });
 
-        return { success: true };
+        return { authenticated: true, success: true };
     },
 
     logout: async ({ cookies }) => {
-        cookies.delete('op_pin_session', { path: '/op' });
+        cookies.delete('op_pin_session', { path: '/' });
         throw redirect(303, '/op');
     }
 };

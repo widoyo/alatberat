@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Dialog, Portal } from '@skeletonlabs/skeleton-svelte';
 
 	// Svelte 5 menggunakan $props untuk mengambil data dari load function & form
 	let { data, form } = $props();

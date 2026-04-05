@@ -1,8 +1,4 @@
 <script lang="ts">
-    import * as Table from '$lib/components/ui/table';
-    import * as Field from '$lib/components/ui/field';
-    import { Button } from '$lib/components/ui/button';
-    import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
     import { Ellipsis  } from '@lucide/svelte';
     import ResponsiveModal from "$lib/components/ResponsiveModal.svelte";
     import { enhance } from '$app/forms';
@@ -16,25 +12,26 @@
     <header class="flex justify-between items-center">
       <h1>Penggunaan Alat Berat</h1>
       {#if data.user}
-        <Button variant="outline" onclick={() => (activeDialog = "add")}>
+        
           + Rencana Penggunaan
-        </Button>
+        
       {/if}
     </header>
 
     <div class="rounded-md border border-black overflow-hidden">
-      <Table.Root>
-        <Table.Header>
-          <Table.Row class="border-b-2 border-black">
-            <Table.Head class="font-bold">Nama</Table.Head>
-            <Table.Head class="font-bold">Alat Berat</Table.Head>
-            <Table.Head class="font-bold">WhatsApp</Table.Head>
-            <Table.Head></Table.Head>
-          </Table.Row>
-        </Table.Header>
+      <table>
+      <thead>
+          <tr class="border-b-2 border-black">
+            <th class="font-bold p-2">Nama</th>
+            <th class="font-bold p-2">Alat Berat</th>
+            <th class="font-bold p-2">WhatsApp</th>
+            <th class="font-bold p-2"></th>
+          </tr>
+        </thead>
+        <tbody>
         {#each data.penggunaan as p (p.id)}
-          <Table.Row>
-            <Table.Cell class="flex items-center gap-2">
+          <tr>
+            <td class="p-2">
               <span>{p.pengguna}</span>
               {#if p.pic === null}
                 <div
@@ -43,42 +40,16 @@
                 >
                 </div>
               {/if}
-            </Table.Cell>
-            <Table.Cell
-              ><a href="/alatberat/{p.asetId}">{p.tanggalMulai}</a
-              ></Table.Cell
-            >
-            <Table.Cell>{p.estimasiSelesai}</Table.Cell>
-            <Table.Cell
-              class="sticky right-0 bg-white shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.1)] z-10 w-12 text-center"
-            >
-              <DropdownMenu.Root>
-                <DropdownMenu.Trigger>
-                  <Ellipsis />
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Content
-                  align="end"
-                  class="w-48 bg-white border-black shadow-xl"
-                >
-                  <DropdownMenu.Label class="text-[12px] font-bold border-b-2">
-                    {p.pengguna}
-                  </DropdownMenu.Label>
-                  <DropdownMenu.Item class="cursor-pointer">
-                      <span>Kirim WA: </span>
-                      <kbd class="ml-auto text-muted-foreground">{p.pic}</kbd>
-                  </DropdownMenu.Item>
-
-                  <DropdownMenu.Item
-                    class="cursor-pointer"
-                  >
-                    <span>Edit...</span>
-                  </DropdownMenu.Item>
-                </DropdownMenu.Content>
-              </DropdownMenu.Root>
-            </Table.Cell>
-          </Table.Row>
+            </td>
+            <td class="p-2">
+              <a href="/alatberat/{p.asetId}">{p.tanggalMulai}</a>
+            </td>
+            <td class="p-2">{p.estimasiSelesai}</td>
+            <td class="p-2">a</td>
+          </tr>
         {/each}
-      </Table.Root>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>

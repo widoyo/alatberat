@@ -31,7 +31,8 @@ export const load: PageServerLoad = async () => {
         });
 
         return {
-            semuaAlatberat: semuaAlatberat, 
+            semuaAlatberat: semuaAlatberat,
+            asets: await db.select().from(aset).orderBy(desc(aset.id)).all(),
             alatBeratOnDuty: alatOnDuty, operators: allOperator, alatBeratStandby: alatStandby }; 
     } 
     catch (e) { 

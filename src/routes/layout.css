@@ -1,2 +1,6 @@
 @import "tailwindcss";
-@plugin "daisyui";
+
+@plugin "daisyui" {
+  /* HAPUS KOMA DI SINI. Gunakan spasi saja */
+  themes: light dark; 
+};

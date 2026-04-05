@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { IdCardLanyardIcon } from "@lucide/svelte";
-  import { Ellipsis } from "@lucide/svelte";
   import ResponsiveModal from "$lib/components/ResponsiveModal.svelte";
   import { applyAction, enhance } from "$app/forms";
   import FormFields from "$lib/components/FormFields.svelte";
@@ -66,7 +64,7 @@
         <tr>
           <td>{o.nama}</td>
           <td>{o.alatBerat}</td>
-          <td><a href={`https://wa.me/${o.whatsapp}`} target="_blank" rel="noopener noreferrer">{o.whatsapp}</a></td>
+          <td><a href={`https://wa.me/${o.whatsapp}?text=Halo,+saya+ingin+bertanya+tentang+layanan+alat+berat.`} target="_blank" rel="noopener noreferrer">{o.whatsapp}</a></td>
           <td>
           </td>
         </tr>
