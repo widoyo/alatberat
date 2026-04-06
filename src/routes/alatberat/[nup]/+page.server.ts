@@ -2,7 +2,6 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit'; import { eq, desc } from 'drizzle-orm';
 import { asetService } from "$lib/server/db/services/aset";
 import { db } from '$lib/server/db';
-import { PenggunaanAset } from '$lib/server/db/schema';
 
 export const load: PageServerLoad = async (event) => { 
     try { 

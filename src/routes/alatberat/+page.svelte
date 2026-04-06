@@ -1,7 +1,5 @@
 <script lang="ts">
-	import ResponsiveModal from '$lib/components/ResponsiveModal.svelte';
 	import { Ellipsis, Plus, Search, MapPin, Construction } from '@lucide/svelte';
-	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
 
@@ -80,7 +78,7 @@
 						<td>
 							<div class="flex items-center gap-2 text-sm">
 								<MapPin size={14} class="text-error" />
-								<span>{aset.lokasiSaatIni || 'Gudang Pusat'}</span>
+								<span>{aset.lokasi || 'Gudang Pusat'}</span>
 							</div>
 						</td>
 						<td class="text-center">
@@ -112,87 +110,3 @@
 	</div>
 </div>
 
-<ResponsiveModal
-	title="Tambah Alat Berat Baru"
-	bind:open={() => activeDialog === 'add', (v) => !v && (activeDialog = null)}
->
-	<form method="POST" action="?/add" use:enhance class="space-y-6 p-4">
-		<div class="form-control w-full">
-			<label class="label" for="deskripsi">
-				<span class="label-text font-semibold">Nama / Deskripsi Alat</span>
-			</label>
-			<input
-				id="deskripsi"
-				name="deskripsi"
-				type="text"
-				placeholder="Contoh: Excavator PC200"
-				class="input input-bordered w-full"
-				required
-			/>
-		</div>
-
-		<div class="grid grid-cols-2 gap-4">
-			<div class="form-control">
-				<label class="label" for="merk">
-					<span class="label-text">Merk</span>
-				</label>
-				<input id="merk" name="merk" type="text" class="input input-bordered" />
-			</div>
-			<div class="form-control">
-				<label class="label" for="tipe">
-					<span class="label-text">Model / Tipe</span>
-				</label>
-				<input id="tipe" name="tipe" type="text" class="input input-bordered" />
-			</div>
-		</div>
-
-		<div class="modal-action">
-			<button type="button" class="btn btn-ghost" onclick={() => (activeDialog = null)}>Batal</button>
-			<button type="submit" class="btn btn-primary px-8">Simpan Aset</button>
-		</div>
-	</form>
-</ResponsiveModal>
-
-<ResponsiveModal title="Edit Detail Alat" bind:open={editState.isOpen}>
-	{#if editState.selectedAset}
-		<form method="POST" action="?/updateAset" use:enhance class="space-y-6 p-4">
-			<input type="hidden" name="id" value={editState.selectedAset.id} />
-
-			<div class="bg-base-200 p-3 rounded-lg flex justify-between items-center mb-4">
-				<span class="text-xs font-bold opacity-50 uppercase">NUP Aset</span>
-				<span class="font-mono font-bold text-primary">{editState.selectedAset.nup}</span>
-			</div>
-
-			<div class="form-control w-full">
-				<label class="label" for="edit-deskripsi">
-					<span class="label-text font-semibold">Deskripsi</span>
-				</label>
-				<input
-					id="edit-deskripsi"
-					name="deskripsi"
-					type="text"
-					class="input input-bordered w-full"
-					value={editState.selectedAset.deskripsi}
-				/>
-			</div>
-
-			<div class="form-control w-full">
-				<label class="label" for="edit-tipe">
-					<span class="label-text font-semibold">Model / Tipe</span>
-				</label>
-				<input
-					id="edit-tipe"
-					name="tipe"
-					type="text"
-					class="input input-bordered w-full"
-					value={editState.selectedAset.tipe}
-				/>
-			</div>
-
-			<div class="modal-action">
-				<button type="button" class="btn btn-ghost" onclick={() => (editState.isOpen = false)}>Batal</button>
-				<button type="submit" class="btn btn-primary px-8">Update</button>
-			</div>
-		</form>
-	{/if}
-</ResponsiveModal>

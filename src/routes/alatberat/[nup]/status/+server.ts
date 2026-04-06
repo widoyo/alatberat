@@ -2,7 +2,7 @@
 import { json } from '@sveltejs/kit';
 import { asetService } from '$lib/server/db/services/aset';
 import { db } from '$lib/server/db';
-import { asetRuntime, aset } from '$lib/server/db/schema';
+import { aset } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 
 export const GET = async ({ params }) => {
@@ -13,11 +13,8 @@ export const GET = async ({ params }) => {
             id: aset.id,
             nup: aset.nup,
             deskripsi: aset.deskripsi,
-            runtimeId: asetRuntime.asetId,
-            isInspected: asetRuntime.isInspected,
         })
         .from(aset)
-        .leftJoin(asetRuntime, eq(aset.id, asetRuntime.asetId))
         .where(eq(aset.nup, nup))
         .limit(1);
 
@@ -29,15 +26,6 @@ export const GET = async ({ params }) => {
     }
 
     // 3. Logic Upsert: Jika data master ada tapi runtime belum ada
-    if (data.runtimeId === null) {
-        await db.insert(asetRuntime).values({
-            asetId: data.id,
-            isInspected: null
-        }).onConflictDoNothing();
-        
-        // Update local variable agar service tidak menerima null
-        data.isInspected = null;
-    }
 
     // 4. Pastikan data adalah object sebelum masuk service
     // Ini adalah 'safety net' untuk mencegah TypeError

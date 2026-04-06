@@ -163,20 +163,6 @@
           </div>
           <p class="text-xs text-slate-500 mt-1">{s.deskripsiPekerjaan}</p>
 
-          {#if data.user && s.spareparts?.length > 0}
-            <div class="mt-3 pt-3 border-t border-slate-50">
-              <div class="text-[10px] font-bold text-slate-400 mb-2">
-                SPAREPARTS:
-              </div>
-              {#each s.spareparts as part}
-                <div class="flex justify-between text-[10px] py-0.5">
-                  <span>{part.nama} (x{part.qty})</span>
-                  <span class="font-mono">Rp {part.harga.toLocaleString()}</span
-                  >
-                </div>
-              {/each}
-            </div>
-          {/if}
         </div>
       {/each}
     </div>
