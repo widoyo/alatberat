@@ -13,12 +13,12 @@
   const opsiKondisi = ["Semua", "baik", "rusak", "perbaikan"];
   const daftarLokasi = $derived([
     "Semua",
-    ...new Set(data.asets?.map((item) => item.lokasi).filter(Boolean)),
+    ...new Set(data?.asets?.map((item) => item.lokasi).filter(Boolean)),
   ]);
 
   // Logika Filter Reaktif (Hati Baja)
   let filteredAset = $derived(
-    data.asets?.filter((item) => {
+    data?.asets?.filter((item) => {
       const matchKategori =
         filterKategori === "Semua" ||
         item.nama.toLowerCase().includes(filterKategori.toLowerCase());
