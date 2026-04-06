@@ -63,7 +63,7 @@
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-sm uppercase tracking-wide">
         Riwayat Penggunaan
-        {#if data.unit.kondisi === "baik"}
+        {#if data.user && data.unit.kondisi === "baik"}
           <button
             onclick={() => (showModal = true)}
             class="btn btn-primary btn-outline btn-xs ml-4 rounded-full font-normal"
@@ -97,7 +97,7 @@
   <section id="bbm" class="bg-slate-50 -mx-6 px-6 py-8">
     <h2 class="text-sm uppercase tracking-wide">
       Log Bahan Bakar
-              {#if data.unit.kondisi === "baik"}
+              {#if data.user }
           <button
             onclick={() => (showBbmModal = true)}
             class="btn btn-primary btn-outline btn-xs ml-4 rounded-full font-normal"
@@ -133,7 +133,7 @@
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-sm uppercase tracking-wide text-gray-500">
         Pemeliharaan & Part
-                {#if data.unit.kondisi === "baik"}
+                {#if data.user }
           <button
             onclick={() => (showServiceModal = true)}
             class="btn btn-primary btn-outline btn-xs ml-4 rounded-full font-normal"
